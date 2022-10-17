@@ -266,10 +266,10 @@ publishing {
                 }
             }
             pom {
-                name = 'PDF viewer component for Vaadin Flow 14.+'
+                name = 'PDF viewer with image overlay visual position component for Vaadin Flow 14.+'
                 packaging = 'jar'
                 // optionally artifactId can be defined here 
-                description = 'PDF viewer component for Vaadin Flow 14.+.'
+                description = 'PDF viewer with image overlay visual position component for Vaadin Flow 14.+'
                 url = 'https://github.com/mdre/pdfviewer'
 
                 // properties = [
