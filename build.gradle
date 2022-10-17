@@ -215,7 +215,7 @@ task createVaadinDirectoryRelease(type: Zip) {
         File vdManifest = new File(vaadinDistDir+"/META-INF/MANIFEST.MF")
         vdManifest.write("Manifest-Version: 1.0\n")
         vdManifest << "Vaadin-Package-Version: 1\n"
-        vdManifest << "Vaadin-Addon: pdfviewer-"+targetVersion+".jar\n"
+        vdManifest << "Vaadin-Addon: PDFViewer-"+targetVersion+".jar\n"
         vdManifest << "Implementation-Vendor: MarceloDRe \n"
         vdManifest << "Implementation-Title: PDF viewer component for Vaadin Flow 14.+\n"
         vdManifest << "Implementation-Version: "+targetVersion+"\n"
