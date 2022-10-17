@@ -217,7 +217,7 @@ task createVaadinDirectoryRelease(type: Zip) {
         vdManifest << "Vaadin-Package-Version: 1\n"
         vdManifest << "Vaadin-Addon: PDFViewer-"+targetVersion+".jar\n"
         vdManifest << "Implementation-Vendor: MarceloDRe \n"
-        vdManifest << "Implementation-Title: PDF viewer component for Vaadin Flow 14.+\n"
+        vdManifest << "Implementation-Title: PDF viewer with image overlay visual position component for Vaadin Flow 14.+\n"
         vdManifest << "Implementation-Version: "+targetVersion+"\n"
         
         // copiar los archivos al directorio
