@@ -8,6 +8,8 @@ import com.vaadin.flow.component.HasTheme;
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.dependency.NpmPackage;
+import com.vaadin.flow.component.page.AppShellConfigurator;
+import com.vaadin.flow.component.page.Push;
 import com.vaadin.flow.component.polymertemplate.PolymerTemplate;
 import com.vaadin.flow.templatemodel.TemplateModel;
 import java.util.HashMap;
@@ -15,11 +17,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+@Push
 @Tag("pdf-viewer")
-@NpmPackage(value = "pdfjs-dist", version = "2.15.349")
+@NpmPackage(value = "pdfjs-dist", version = "3.6.172")
+// @NpmPackage(value = "pdfjs-dist", version = "2.15.349")
 // @NpmPackage(value = "pdfjs-dist", version = "2.5.207") --> con este funcionaba: 2.10.377
 @JsModule("./pdfviewer/pdf-viewer.js")
-public class PDFViewer extends PolymerTemplate<TemplateModel> implements HasSize, HasTheme, HasStyle, HasComponents {
+public class PDFViewer extends PolymerTemplate<TemplateModel> implements HasSize, HasTheme, HasStyle, HasComponents, AppShellConfigurator {
 
     /**
      *
@@ -29,7 +33,7 @@ public class PDFViewer extends PolymerTemplate<TemplateModel> implements HasSize
     private final static Logger LOGGER = Logger.getLogger(PDFViewer.class.getName());
     static {
         if (LOGGER.getLevel() == null) {
-            LOGGER.setLevel(Level.FINEST);
+            LOGGER.setLevel(Level.INFO);
         }
     }
     boolean ready = false;
@@ -72,7 +76,7 @@ public class PDFViewer extends PolymerTemplate<TemplateModel> implements HasSize
     
     
     @ClientCallable
-    private void setImageCoords(int x, int y) {
+    private void _setImageCoords(int x, int y) {
         LOGGER.log(Level.FINEST,"Image coords: "+x+","+y );
         this.imageX = x;
         this.imageY = y;
@@ -92,6 +96,13 @@ public class PDFViewer extends PolymerTemplate<TemplateModel> implements HasSize
         return this;
     }
 
+    public PDFViewer setImageCoords(int x, int y) {
+        this.imageX = x;
+        this.imageY = y;
+        getElement().callJsFunction("setImageCoords", x,y);
+        return this;
+    }
+    
     public double getImageScale() {
         return this.imageScale;
     }

@@ -1,8 +1,10 @@
 import { PolymerElement, html } from '@polymer/polymer/polymer-element.js';
 import { ThemableMixin } from '@vaadin/vaadin-themable-mixin/vaadin-themable-mixin.js';
+
 //import { pdfjsLib } from 'pdfjs-dist/build/pdf.min.js';
-//import 'pdfjs-dist/build/pdf.worker.js';
-//import pdfjsWorker from "@pdfjs-dist/build/pdf.worker.entry";
+import 'pdfjs-dist/build/pdf.worker.js';
+import {pdfjsWorker2} from "pdfjs-dist/build/pdf.worker.entry";
+
 import "@vaadin/flow-frontend/pdfviewer/pdfviewer-css-loader.js";
 
 
@@ -62,9 +64,11 @@ class PDFViewer extends ThemableMixin(PolymerElement) {
     constructor() {
         super();
 
-        this.logEnabled = true;
+        this.logEnabled = false;
 
         this.log("\n\nPDFViewer\n\n");
+        
+        this.viewport = 'undefined';
         this.embedImagePromise = {};
         this.imgDict = {};
         // escala de conversión de pixels a points para insertar en los pdfs
@@ -76,52 +80,69 @@ class PDFViewer extends ThemableMixin(PolymerElement) {
         this.lastPosY = null;
 
         this.pageToView = 1;
-
+        
         this.loadPDFJS();
-
+        
+        this.log("constructor end! \n\n\n");
         //pdfjs.GlobalWorkerOptions.workerPort = new PdfjsWorker();
         //this.log("w2", worker);
     }
 
-    async loadPDFJS() {
+    loadPDFJS() {
         // FIX para el PDFJS. De la forma tradicional no funcionaba.
-        this.pdfjs = await
-        import ('pdfjs-dist/legacy/build/pdf');
-        this.log("PDFJS", this.pdfjs);
+        this.log("\n\nloading PDFJS....");
+        
+        this.pdfjsLoad = import ('pdfjs-dist/legacy/build/pdf');
 
-        this.pdfjsWorker = await
-        import ('pdfjs-dist/legacy/build/pdf.worker.entry');
-        this.pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+        this.pdfjsWorkerLoad = import ('pdfjs-dist/legacy/build/pdf.worker.entry');
 
-        this.log("PDFJS: ", this.pdfjs);
-        this.log("PdfjsWorker: ", this.pdfjsWorker);
-
+        this.pdfjsLoad.then((pdfL)=>{
+            this.pdfjs = pdfL;
+        
+            this.pdfjsWorkerLoad.then((pdfWL)=>{
+                this.pdfjsWorker = pdfWL;
+                
+                this.pdfjs.GlobalWorkerOptions.workerSrc = this.pdfjsWorker;
+            
+                this.log("\n\n\nLoad END!!!");
+                this.log("PDFJS: ", this.pdfjs);
+                this.log("PdfjsWorker: ", this.pdfjsWorker);
+            });
+        });
+        
     }
 
+    
     load(tURL) {
         this.log(tURL);
         this.targetURL = tURL;
         this.internalLoad();
+        
     }
+    
 
-    async internalLoad() {
+    internalLoad() {
 
         const url = this.targetURL;
-
-        var loadingTask = this.pdfjs.getDocument(url);
-        loadingTask.promise.then((pdf) => {
-            this.pdf = pdf;
-            this.viewPage(1);
-            this.$.pagecount.textContent = this.pdf.numPages;
-            this.updateNavbar();
-            this.$server.setPageCount(this.pdf.numPages);
+        this.pdfjsLoad.then(()=>{
+            var loadingTask = this.pdfjs.getDocument(url);
+            loadingTask.promise.then((pdf) => {
+                this.pdf = pdf;
+                
+                this.viewPage(1);
+                
+                this.log("page count: ",this.pdf.numPages);
+                this.$.pagecount.textContent = this.pdf.numPages;
+                this.updateNavbar();
+                this.$server.setPageCount(this.pdf.numPages);
+            });
         });
-
+        
     }
 
     viewPage(page) {
         this.pageToView = page;
-
+        
         // you can now use *pdf* here
         this.pdf.getPage(this.pageToView).then((page) => {
             this.log("page: ", page);
@@ -160,8 +181,16 @@ class PDFViewer extends ThemableMixin(PolymerElement) {
                 viewport: this.viewport
             };
             page.render(renderContext);
+             if (typeof this.img !== 'undefined') {
+                this._drawImage();
+            }
         });
 
+    }
+
+    setImageCoords(x,y){
+        this.imgX = x;
+        this.imgY = y;
     }
 
     setImageScale(e) {
@@ -169,15 +198,27 @@ class PDFViewer extends ThemableMixin(PolymerElement) {
         this._drawImage(this.img);
     }
 
+    removeImage() {
+        this.img = void 0;  // establecer la variable como undefined
+        
+        var canvas = this.$.canvasSello;
+        var context = canvas.getContext("2d");
+
+        context.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    
     async drawImage(imageName, imageUrl) {
         this.log("\n\nDrawImage\n\n");
         this.log(imageName, imageUrl);
         this.img = new Image();
-        await new Promise(r => this.img.onload = r, this.img.src = imageUrl);
+        await new Promise(r => this.img.onload = r, this.img.src = imageUrl).then(()=>{
+            // this.imgX = this.$.canvasSello.width / 2 - this.img.width / 2;
+            // this.imgY = this.$.canvasSello.height / 2 - this.img.height / 2;
+            this.imgX = this.imgX === 0 ? 50 : this.imgX;
+            this.imgY = this.imgY === 0 ? 50 : this.imgY;
+            this._drawImage();
+        });
 
-        this.imgX = this.$.canvasSello.width / 2 - this.img.width / 2;
-        this.imgY = this.$.canvasSello.height / 2 - this.img.height / 2;
-        this._drawImage();
     }
 
     _drawImage() {
@@ -186,17 +227,18 @@ class PDFViewer extends ThemableMixin(PolymerElement) {
 
         context.clearRect(0, 0, canvas.width, canvas.height);
 
-        for (let y = 50; y < canvas.height; y += 50) {
-
-            context.beginPath();
-            context.lineWidth = "1";
-            context.strokeStyle = "black"; // Green path
-            context.moveTo(0, y);
-            context.lineTo(canvas.width, y);
-            context.stroke(); // Draw it
-
-            context.strokeText("" + y, 0, y);
-        }
+        // dibuja las líneas para debug de coordenadas
+//        for (let y = 50; y < canvas.height; y += 50) {
+//
+//            context.beginPath();
+//            context.lineWidth = "1";
+//            context.strokeStyle = "black"; // Green path
+//            context.moveTo(0, y);
+//            context.lineTo(canvas.width, y);
+//            context.stroke(); // Draw it
+//
+//            context.strokeText("" + y, 0, y);
+//        }
 
         this.log("Imagen: ", this.imgX, this.imgY, this.img.width * this.imageScale, this.img.height * this.imageScale);
         context.drawImage(this.img, this.imgX, this.imgY, this.img.width * this.imageScale, this.img.height * this.imageScale);
@@ -214,7 +256,7 @@ class PDFViewer extends ThemableMixin(PolymerElement) {
         this.log("Coords convertToPdfPoint:", pdfPoint[0], pdfPoint[1]);
         this.log("Coords calculadas:", this.imgX / this.outputScale, (this.$.canvasSello.height - this.imgY - (this.img.height * this.imageScale)) / (this.img.height * this.imageScale));
         //this.$server.setImageCoords(this.imgX, this.$.canvasSello.height - this.imgY - (this.img.height * this.imageScale));
-        this.$server.setImageCoords(pdfPoint[0], pdfPoint[1]);
+        this.$server._setImageCoords(pdfPoint[0], pdfPoint[1]);
     }
 
     beginDrag(evt) {

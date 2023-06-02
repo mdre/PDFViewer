@@ -19,10 +19,11 @@ plugins {
 }
 
 
-def sonatypeUser = credentials.sonatypeUser
+def sonatypeUsername = credentials.sonatypeUser
 def sonatypePassword = credentials.sonatypePassword
 
-def vaadinVersion = "14.1.20"
+
+def vaadinVersion = "23.+"
 
 description = rootProject.name
 
@@ -84,20 +85,20 @@ task autoBuildNumber {
 // agregar esta tarea para que no se incremente el valor.
 task sabn{}
 
-task createMavenPom {
-    doLast {
-        println "creando el POM..."
-        mkdir("build/resources/main/META-INF/maven/$project.group/$project.archivesBaseName")
-
-        pom {}.writeTo("build/resources/main/META-INF/maven/$project.group/$project.archivesBaseName/pom.xml")
-
-        file("build/resources/main/META-INF/maven/$project.group/$project.archivesBaseName/pom.properties").text = """\
-            version=$project.version
-            groupId=$project.group
-            artifactId=$artifactId
-            """.stripIndent()
-    }
-} 
+//task createMavenPom {
+//    doLast {
+//        println "creando el POM..."
+//        mkdir("build/resources/main/META-INF/maven/$project.group/$project.archivesBaseName")
+//
+//        pom {}.writeTo("build/resources/main/META-INF/maven/$project.group/$project.archivesBaseName/pom.xml")
+//
+//        file("build/resources/main/META-INF/maven/$project.group/$project.archivesBaseName/pom.properties").text = """\
+//            version=$project.version
+//            groupId=$project.group
+//            artifactId=$artifactId
+//            """.stripIndent()
+//    }
+//} 
 
 // agregar la dependencia solo si no se trata de un release
 if (! (project.gradle.startParameter.taskNames.join(",").toLowerCase().contains("release")
@@ -144,7 +145,22 @@ test {
     }
 }
 
+
 jar {
+    into("META-INF/maven/$project.group/$project.name") {
+        from { generatePomFileForMavenPublication }
+        rename ".*", "pom.xml"
+    }
+    
+    into("META-INF/maven/$project.group/$project.name") {
+        File pomProperites = new File("pom.properties")
+        pomProperites.write("version:"+version+"\n")
+        pomProperites << "groupId: $project.group\n"
+        pomProperites << "artifactId: $artifactId\n"
+        
+        from("pom.properties")
+    }
+    
     manifest {
         attributes(
             "Manifest-Version": "1.0",
@@ -156,6 +172,7 @@ jar {
       
         )
     }
+    
 }
 
 
@@ -245,16 +262,21 @@ java {
     withSourcesJar()
 }
 
+
 nexusPublishing {
     repositories {
-        sonatype()
+        //sonatype()
+        sonatype {
+            username = sonatypeUsername
+            password = sonatypePassword
+        }
     }
 }
 
 
 publishing {
     publications {
-        mavenJava(MavenPublication) {
+        maven(MavenPublication) {
             //artifactId = 'my-library'
             from components.java
             versionMapping {
@@ -297,26 +319,11 @@ publishing {
             }
         }
     }
-//     repositories {
-//         maven {
-//     //             repository(url: "$sonatypeURLRelease") {
-// //                 authentication(userName: credentials.sonatypeUser, password: credentials.sonatypePassword)
-// //             }
-            
-// //             snapshotRepository(url: "$sonatypeURLSnapshot") {
-// //                 authentication(userName: credentials.sonatypeUser, password: credentials.sonatypePassword)
-// //             }
-
-//             // change URLs to point to your repos, e.g. http://my.org/repo
-//             def releasesRepoUrl = layout.buildDirectory.dir('repos/releases')
-//             def snapshotsRepoUrl = layout.buildDirectory.dir('repos/snapshots')
-//             url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
-//         }
-//     }
+    
 }
 
 signing {
-    sign publishing.publications.mavenJava
+    sign publishing.publications.maven
 }
 
 

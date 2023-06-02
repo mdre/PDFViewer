@@ -188,6 +188,11 @@ class PDFViewer extends ThemableMixin(PolymerElement) {
 
     }
 
+    setImageCoords(x,y){
+        this.imgX = x;
+        this.imgY = y;
+    }
+
     setImageScale(e) {
         this.imageScale = e;
         this._drawImage(this.img);
@@ -207,8 +212,10 @@ class PDFViewer extends ThemableMixin(PolymerElement) {
         this.log(imageName, imageUrl);
         this.img = new Image();
         await new Promise(r => this.img.onload = r, this.img.src = imageUrl).then(()=>{
-            this.imgX = this.$.canvasSello.width / 2 - this.img.width / 2;
-            this.imgY = this.$.canvasSello.height / 2 - this.img.height / 2;
+            // this.imgX = this.$.canvasSello.width / 2 - this.img.width / 2;
+            // this.imgY = this.$.canvasSello.height / 2 - this.img.height / 2;
+            this.imgX = this.imgX === 0 ? 50 : this.imgX;
+            this.imgY = this.imgY === 0 ? 50 : this.imgY;
             this._drawImage();
         });
 
@@ -249,7 +256,7 @@ class PDFViewer extends ThemableMixin(PolymerElement) {
         this.log("Coords convertToPdfPoint:", pdfPoint[0], pdfPoint[1]);
         this.log("Coords calculadas:", this.imgX / this.outputScale, (this.$.canvasSello.height - this.imgY - (this.img.height * this.imageScale)) / (this.img.height * this.imageScale));
         //this.$server.setImageCoords(this.imgX, this.$.canvasSello.height - this.imgY - (this.img.height * this.imageScale));
-        this.$server.setImageCoords(pdfPoint[0], pdfPoint[1]);
+        this.$server._setImageCoords(pdfPoint[0], pdfPoint[1]);
     }
 
     beginDrag(evt) {
