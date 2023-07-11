@@ -38,12 +38,13 @@ public class PDFViewer extends PolymerTemplate<TemplateModel> implements HasSize
     }
     boolean ready = false;
     
-    int imageX;
-    int imageY;
+    int pdfImageX;
+    int pdfImageY;
     double imageScale = 1;
     int currentPage = 1;
     int pageCount;
     
+    ICoordUpdateEvent coordsEvent;
     // factor de conversión de pixels a points
     float pxToptScale= 0.75f;
 
@@ -76,18 +77,29 @@ public class PDFViewer extends PolymerTemplate<TemplateModel> implements HasSize
     
     
     @ClientCallable
+    private void _setPDFImageCoords(int pdfX, int pdfY) {
+        LOGGER.log(Level.FINEST,"Image coords: "+pdfX+","+pdfY );
+        this.pdfImageX = pdfX;
+        this.pdfImageY = pdfY;
+    }
+
+    @ClientCallable
     private void _setImageCoords(int x, int y) {
-        LOGGER.log(Level.FINEST,"Image coords: "+x+","+y );
-        this.imageX = x;
-        this.imageY = y;
+        if (this.coordsEvent != null) {
+            coordsEvent.updateCoordinates(x, y);
+        }
     }
 
-    public float getImageX() {
-        return imageX;
+    public void onCoordsChanged(ICoordUpdateEvent ce) {
+        this.coordsEvent = ce;
     }
 
-    public float getImageY() {
-        return imageY;
+    public float getPDFImageX() {
+        return pdfImageX;
+    }
+
+    public float getPDFImageY() {
+        return pdfImageY;
     }
     
     public PDFViewer setImageScale(double e) {
@@ -97,8 +109,6 @@ public class PDFViewer extends PolymerTemplate<TemplateModel> implements HasSize
     }
 
     public PDFViewer setImageCoords(int x, int y) {
-        this.imageX = x;
-        this.imageY = y;
         getElement().callJsFunction("setImageCoords", x,y);
         return this;
     }

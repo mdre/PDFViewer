@@ -191,6 +191,7 @@ class PDFViewer extends ThemableMixin(PolymerElement) {
     setImageCoords(x,y){
         this.imgX = x;
         this.imgY = y;
+        this._drawImage();
     }
 
     setImageScale(e) {
@@ -256,7 +257,7 @@ class PDFViewer extends ThemableMixin(PolymerElement) {
         this.log("Coords convertToPdfPoint:", pdfPoint[0], pdfPoint[1]);
         this.log("Coords calculadas:", this.imgX / this.outputScale, (this.$.canvasSello.height - this.imgY - (this.img.height * this.imageScale)) / (this.img.height * this.imageScale));
         //this.$server.setImageCoords(this.imgX, this.$.canvasSello.height - this.imgY - (this.img.height * this.imageScale));
-        this.$server._setImageCoords(pdfPoint[0], pdfPoint[1]);
+        this.$server._setPDFImageCoords(pdfPoint[0], pdfPoint[1]);
     }
 
     beginDrag(evt) {
@@ -277,7 +278,9 @@ class PDFViewer extends ThemableMixin(PolymerElement) {
             this.log("BCR: ", this.$.canvasSello.getBoundingClientRect());
             this.log("evt:", evt.clientX, evt.clientY, "canvasPos:", rect.left, rect.top, "img:", this.imgX, this.imgY);
 
-            this._drawImage();
+            var pdfPoint = this._drawImage();
+            // retornar las coordenadas calculadas por el canvas
+            this.$server._setImageCoords(this.imgX, this.imgY);
         }
     }
 
